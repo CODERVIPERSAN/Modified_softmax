@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modified Softmax Comparison</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2rem;
+            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+        .input-section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .input-group {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+        .field {
+            flex: 1;
+            min-width: 200px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 1rem;
+        }
+        input:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+        button {
+            padding: 12px 32px;
+            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+        .presets {
+            margin-top: 16px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .preset-btn {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.1);
+            font-size: 0.85rem;
+        }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        .chart-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 20px;
+        }
+        .chart-title {
+            font-size: 1.1rem;
+            margin-bottom: 16px;
+            color: #fff;
+        }
+        .chart-container {
+            position: relative;
+            height: 250px;
+        }
+        .comparison-table {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 24px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        th {
+            color: #888;
+            font-weight: 500;
+        }
+        .highlight {
+            color: #00d4ff;
+            font-weight: 600;
+        }
+        .explanation {
+            background: rgba(124, 58, 237, 0.1);
+            border-left: 4px solid #7c3aed;
+            padding: 16px;
+            margin-top: 24px;
+            border-radius: 0 8px 8px 0;
+        }
+        .explanation h3 {
+            color: #7c3aed;
+            margin-bottom: 8px;
+        }
+        .explanation p {
+            color: #aaa;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Modified Softmax Comparison</h1>
+        <p class="subtitle">A Novel Sigmoid-Based Probability Normalization Approach</p>
+
+        <div class="input-section">
+            <div class="input-group">
+                <div class="field">
+                    <label>Input Values (comma-separated)</label>
+                    <input type="text" id="values" placeholder="25, 50" value="25, 50">
+                </div>
+                <div class="field" style="max-width: 150px;">
+                    <label>Alpha (α)</label>
+                    <input type="number" id="alpha" value="0.1" step="0.01" min="0.01" max="2">
+                </div>
+                <button onclick="compute()">Compare</button>
+            </div>
+            <div class="presets">
+                <button class="preset-btn" onclick="setPreset('25, 50')">25, 50</button>
+                <button class="preset-btn" onclick="setPreset('75, 25')">75, 25</button>
+                <button class="preset-btn" onclick="setPreset('100, 50, 25, 10, 5')">Frequencies</button>
+                <button class="preset-btn" onclick="setPreset('2.5, 0.3, -1.2')">Logits</button>
+                <button class="preset-btn" onclick="setPreset('1, 2, 3, 4, 5')">Gradual</button>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-title">📊 Standard Softmax</div>
+                <div class="chart-container">
+                    <canvas id="chartStandard"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">🔄 Modified Softmax (σ/Σσ)</div>
+                <div class="chart-container">
+                    <canvas id="chartModified"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">⚖️ Weighted Modified (α=<span id="alphaDisplay">0.1</span>)</div>
+                <div class="chart-container">
+                    <canvas id="chartWeighted"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">📈 All Methods Compared</div>
+                <div class="chart-container">
+                    <canvas id="chartComparison"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="comparison-table">
+            <h3 style="margin-bottom: 16px;">Probability Distribution</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Class</th>
+                        <th>Input Value</th>
+                        <th>Standard Softmax</th>
+                        <th>Modified Softmax</th>
+                        <th>Weighted Modified</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="explanation">
+            <h3>How It Works</h3>
+            <p>
+                <strong>Standard Softmax:</strong> exp(x) / Σexp(x) — Biased towards larger values due to exponential amplification.<br><br>
+                <strong>Modified Softmax:</strong> σ(x) / Σσ(x) — Uses sigmoid, treats all "good" values equally (sigmoid saturation).<br><br>
+                <strong>Weighted Modified:</strong> σ(αx) / Σσ(αx) — Tunable α controls sensitivity. Lower α = more distinction preserved.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let charts = {};
+        const colors = {
+            standard: '#ff6384',
+            modified: '#36a2eb',
+            weighted: '#4bc0c0'
+        };
+
+        function createChart(id, label, color) {
+            const ctx = document.getElementById(id).getContext('2d');
+            return new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: label,
+                        data: [],
+                        backgroundColor: color + '80',
+                        borderColor: color,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            max: 1,
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: '#888' }
+                        },
+                        x: { 
+                            grid: { display: false },
+                            ticks: { color: '#888' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createComparisonChart() {
+            const ctx = document.getElementById('chartComparison').getContext('2d');
+            return new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Standard', data: [], backgroundColor: colors.standard + '80', borderColor: colors.standard, borderWidth: 2 },
+                        { label: 'Modified', data: [], backgroundColor: colors.modified + '80', borderColor: colors.modified, borderWidth: 2 },
+                        { label: 'Weighted', data: [], backgroundColor: colors.weighted + '80', borderColor: colors.weighted, borderWidth: 2 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#888' } } },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            max: 1,
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: '#888' }
+                        },
+                        x: { 
+                            grid: { display: false },
+                            ticks: { color: '#888' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initCharts() {
+            charts.standard = createChart('chartStandard', 'Standard Softmax', colors.standard);
+            charts.modified = createChart('chartModified', 'Modified Softmax', colors.modified);
+            charts.weighted = createChart('chartWeighted', 'Weighted Modified', colors.weighted);
+            charts.comparison = createComparisonChart();
+        }
+
+        function updateCharts(data) {
+            const labels = data.labels;
+            
+            charts.standard.data.labels = labels;
+            charts.standard.data.datasets[0].data = data.standard;
+            charts.standard.update();
+
+            charts.modified.data.labels = labels;
+            charts.modified.data.datasets[0].data = data.modified;
+            charts.modified.update();
+
+            charts.weighted.data.labels = labels;
+            charts.weighted.data.datasets[0].data = data.weighted;
+            charts.weighted.update();
+
+            charts.comparison.data.labels = labels;
+            charts.comparison.data.datasets[0].data = data.standard;
+            charts.comparison.data.datasets[1].data = data.modified;
+            charts.comparison.data.datasets[2].data = data.weighted;
+            charts.comparison.update();
+
+            document.getElementById('alphaDisplay').textContent = data.alpha;
+        }
+
+        function updateTable(data) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            for (let i = 0; i < data.values.length; i++) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>Class ${i}</td>
+                    <td class="highlight">${data.values[i]}</td>
+                    <td>${(data.standard[i] * 100).toFixed(4)}%</td>
+                    <td>${(data.modified[i] * 100).toFixed(4)}%</td>
+                    <td>${(data.weighted[i] * 100).toFixed(4)}%</td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+
+        async function compute() {
+            const values = document.getElementById('values').value;
+            const alpha = document.getElementById('alpha').value;
+
+            const response = await fetch('/compute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ values, alpha })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                updateCharts(data);
+                updateTable(data);
+            }
+        }
+
+        function setPreset(values) {
+            document.getElementById('values').value = values;
+            compute();
+        }
+
+        // Initialize
+        initCharts();
+        compute();
+    </script>
+</body>
+</html>
